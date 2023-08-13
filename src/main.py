@@ -55,7 +55,7 @@ def printDate(start_date,end_date):
     return None
 
 def read_shapefile(file_name):
-    gdf = gpd.read_file(filename)
+    gdf = gpd.read_file(file_name)
     return gdf
 
 
