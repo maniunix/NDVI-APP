@@ -5,6 +5,8 @@ import plotly.graph_objs as go
 import plotly.express as px
 import geemap
 import geopandas as gpd
+import ee
+import shapely
 # import dash_bootstrap_components as dbc
 from datetime import date
 
@@ -54,11 +56,14 @@ app.layout = html.Div(
 def printDate(start_date,end_date):
     return None
 
-def read_shapefile(file_name):
-    gdf = gpd.read_file(file_name)
-    return gdf
+def read_shapefile(file_path: str):
+    global start_date, end_date
+    gdf = gpd.read_file(file_path)
+    geom = list(gdf.geometry[0].exterior.coords)
+    aoi = ee.Geometry.Polygon(geom)
 
-
+    image_collection = ee.ImageCollection('COPERNICUS/S2_SR').filterBounds(aoi).filterDate(start_date, end_date).first()
+    return None
 
 
 
