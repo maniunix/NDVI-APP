@@ -3,7 +3,8 @@ import dash_core_components as dcc
 from dash import html
 import plotly.graph_objs as go
 import plotly.express as px
-import geemap 
+import geemap
+import geopandas as gpd
 # import dash_bootstrap_components as dbc
 from datetime import date
 
@@ -52,6 +53,10 @@ app.layout = html.Div(
 
 def printDate(start_date,end_date):
     return None
+
+def read_shapefile(file_name):
+    gdf = gpd.read_file(filename)
+    return gdf
 
 
 
