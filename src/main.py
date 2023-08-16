@@ -56,14 +56,35 @@ app.layout = html.Div(
 def printDate(start_date,end_date):
     return None
 
+
+def getNDVI(image):
+    '''
+    Take the image and returns the Normalized difference of the Near-Infrared band and Red Band
+    Input -> ee.Image
+    Output -> ee.Image
+    '''
+    nir = image.select('B8')
+    red = image.select('B4')
+    ndvi = image.normlizedDifference([nir,red])
+    return image.addBands(ndvi)
+
+
 def read_shapefile(file_path: str):
+    '''
+    Takes the File path to shapefile as an input.
+    Returns clipped NDVI of ROI.
+    Input -> Shapefile
+    Output -> ee.Image
+    '''
     global start_date, end_date
     gdf = gpd.read_file(file_path)
     geom = list(gdf.geometry[0].exterior.coords)
     aoi = ee.Geometry.Polygon(geom)
 
-    image_collection = ee.ImageCollection('COPERNICUS/S2_SR').filterBounds(aoi).filterDate(start_date, end_date).first()
-    return None
+    image = ee.ImageCollection('COPERNICUS/S2_SR').filterBounds(aoi).filterDate(start_date, end_date).first()
+    return getNDVI(image)
+
+
 
 
 
