@@ -1,14 +1,14 @@
 import dash
 import dash_core_components as dcc
-from dash import html
 import plotly.graph_objs as go
 import plotly.express as px
 import geemap
 import geopandas as gpd
 import ee
-import shapely
 # import dash_bootstrap_components as dbc
 from datetime import date
+from dash import html
+from ee_computation import getNDVI
 
 ## Initialization
 Map = geemap.Map()
@@ -54,19 +54,10 @@ app.layout = html.Div(
     dash.dependencies.Input('my-date-picker-range', 'end_date'))
 
 def printDate(start_date,end_date):
-    return None
+    startdate = start_date
+    enddate = end_date
+    return startdate, enddate
 
-
-def getNDVI(image):
-    '''
-    Take the image and returns the Normalized difference of the Near-Infrared band and Red Band
-    Input -> ee.Image
-    Output -> ee.Image
-    '''
-    nir = image.select('B8')
-    red = image.select('B4')
-    ndvi = image.normlizedDifference([nir,red])
-    return image.addBands(ndvi)
 
 
 def read_shapefile(file_path: str):
@@ -76,13 +67,14 @@ def read_shapefile(file_path: str):
     Input -> Shapefile
     Output -> ee.Image
     '''
-    global start_date, end_date
-    gdf = gpd.read_file(file_path)
-    geom = list(gdf.geometry[0].exterior.coords)
-    aoi = ee.Geometry.Polygon(geom)
+    if "shp" in file_path:
+        global start_date, end_date
+        gdf = gpd.read_file(file_path)
+        geom = list(gdf.geometry[0].exterior.coords)
+        aoi = ee.Geometry.Polygon(geom)
 
-    image = ee.ImageCollection('COPERNICUS/S2_SR').filterBounds(aoi).filterDate(start_date, end_date).first()
-    return getNDVI(image)
+        image = ee.ImageCollection('COPERNICUS/S2_SR').filterBounds(aoi).filterDate(start_date, end_date).first()
+        return getNDVI(image)
 
 
 
