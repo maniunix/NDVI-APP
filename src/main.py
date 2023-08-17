@@ -1,11 +1,8 @@
 import dash
 import dash_core_components as dcc
-import plotly.graph_objs as go
-import plotly.express as px
+import ee
 import geemap
 import geopandas as gpd
-import ee
-# import dash_bootstrap_components as dbc
 from datetime import date
 from dash import html
 from ee_computation import getNDVI
@@ -42,7 +39,8 @@ app.layout = html.Div(
         }, multiple= False),
         html.Div(id='output-data-upload')]),
 
-    html.Div(id='output-container-date-picker-range')
+    html.Div(id='output-container-date-picker-range'),
+    html.Div(id = "ndvi-container")
 ]))
 
 
@@ -72,11 +70,10 @@ def read_shapefile(file_path: str):
         gdf = gpd.read_file(file_path)
         geom = list(gdf.geometry[0].exterior.coords)
         aoi = ee.Geometry.Polygon(geom)
-
         image = ee.ImageCollection('COPERNICUS/S2_SR').filterBounds(aoi).filterDate(start_date, end_date).first()
         return getNDVI(image)
-
-
+    else:
+        pass
 
 
 
