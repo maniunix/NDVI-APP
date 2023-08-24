@@ -7,9 +7,7 @@ def getNDVI(image):
     Input -> ee.Image
     Output -> ee.Image
     '''
-    nir = image.select('B8')
-    red = image.select('B4')
-    ndvi = image.normlizedDifference([nir,red])
+    ndvi = image.normalizedDifference(['B8','B4']).rename('NDVI')
     return image.addBands(ndvi)
 
 def monthlyNDVI(n,collection ,startDate, aoi):
