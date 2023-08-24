@@ -48,6 +48,17 @@ def monthlyNDVI(n):
                     scale = 10))
     return dic.combine(tempNDVI)
 
+def getDataframe(file_path, start_date, end_date):
+    gdf = gpd.read_file(file_path)
+    geom = list(gdf.geometry[0].exterior.coords)
+    aoi = ee.Geometry.Polygon(geom)
+    start_date = "2018-01-01"
+    end_date = "2022-12-31"
+    ndvi_collection = read_shapefile(file_path, start_date, end_date).map(maskS2clouds)
+    yrMo = ee.List.sequence(0, 12*3-1).map(monthlyNDVI)
+    df = pd.DataFrame(yrMo.getInfo())
+    return df
+
 
 if __name__ == "__main__":
     file_path = "E:/upwork/1225/1225.shp"
