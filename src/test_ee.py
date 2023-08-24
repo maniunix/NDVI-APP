@@ -12,22 +12,22 @@ def maskS2clouds(image):
     return image.updateMask(mask)
 
 
-def read_shapefile(file_path: str):
+def read_shapefile(file_path: str, start_date, end_date):
     '''
     Takes the File path to shapefile as an input.
     Returns clipped NDVI of ROI.
     Input -> Shapefile
     Output -> ee.Image
     '''
-    start_date = "2018-01-01"
-    end_date = "2018-12-31"
+    # start_date = "2018-01-01"
+    # end_date = "2018-12-31"
     if "shp" in file_path:
         # global start_date, end_date
         gdf = gpd.read_file(file_path)
         geom = list(gdf.geometry[0].exterior.coords)
         aoi = ee.Geometry.Polygon(geom)
-        image = ee.ImageCollection('COPERNICUS/S2_SR').filterBounds(aoi).filterDate(start_date, end_date)
-        ndvi_collection = image.map(getNDVI).filterDate(start_date, end_date)
+        image = ee.ImageCollection('COPERNICUS/S2').filterBounds(aoi).filterDate(start_date, end_date)
+        ndvi_collection = image.map(maskS2clouds).map(getNDVI).filterDate(start_date, end_date)
         return ndvi_collection
 
 def monthlyNDVI(n):
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     geom = list(gdf.geometry[0].exterior.coords)
     aoi = ee.Geometry.Polygon(geom)
     start_date = "2018-01-01"
-    end_date = "2018-12-31"
-    ndvi_collection = read_shapefile(file_path).map(maskS2clouds)
-    yrMo = ee.List.sequence(0, 12*2-1).map(monthlyNDVI)
+    end_date = "2022-12-31"
+    ndvi_collection = read_shapefile(file_path, start_date, end_date).map(maskS2clouds)
+    yrMo = ee.List.sequence(0, 12*3-1).map(monthlyNDVI)
     df = pd.DataFrame(yrMo.getInfo())
