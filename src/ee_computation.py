@@ -1,6 +1,5 @@
 import ee
 import geopandas as gpd
-from ee_computation import getNDVI
 import pandas as pd
 
 def maskS2clouds(image):
