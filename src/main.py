@@ -1,11 +1,15 @@
 import dash
 import dash_core_components as dcc
 import ee
+import datetime
+import io
+import base64
+import pandas as pd
 import geemap
 import geopandas as gpd
 from datetime import date
-from dash import html
-from ee_computation import getNDVI
+from dash import html, dash_table, State
+from ee_computation import getDataframe
 
 ## Initialization
 Map = geemap.Map()
@@ -22,7 +26,7 @@ app.layout = html.Div(
             style= {'font-size': '6px','display': 'inline-block', 'border-radius' : '2px', 
                     'border' : '1px solid #ccc', 'color': '#333', 
                     'border-spacing' : '0', 'border-collapse' :'separate'}),
-    html.Div([dcc.Upload(id = "upload-file",
+    html.Div([dcc.Upload(id = "upload-data",
                          children=html.Div([
             'Drag and Drop or ',
             html.A('Select Files')
@@ -57,25 +61,57 @@ def printDate(start_date,end_date):
     return startdate, enddate
 
 
+def parse_contents(contents, filename, date):
+    content_type, content_string = contents.split(',')
 
-def read_shapefile(file_path: str):
-    '''
-    Takes the File path to shapefile as an input.
-    Returns clipped NDVI of ROI.
-    Input -> Shapefile
-    Output -> ee.Image
-    '''
-    if "shp" in file_path:
-        global start_date, end_date
-        gdf = gpd.read_file(file_path)
-        geom = list(gdf.geometry[0].exterior.coords)
-        aoi = ee.Geometry.Polygon(geom)
-        image = ee.ImageCollection('COPERNICUS/S2_SR').filterBounds(aoi).filterDate(start_date, end_date).first()
-        return getNDVI(image)
-    else:
-        pass
+    decoded = base64.b64decode(content_string)
+    try:
+        if 'csv' in filename:
+            # Assume that the user uploaded a CSV file
+            df = pd.read_csv(
+                io.StringIO(decoded.decode('utf-8')))
+        elif 'xls' in filename:
+            # Assume that the user uploaded an excel file
+            df = pd.read_excel(io.BytesIO(decoded))
+        elif 'shp' in filename:
+            df = gpd.read_file(io.StringIO(decoded.decode('utf-8')))
+    except Exception as e:
+        print(e)
+        return html.Div([
+            'There was an error processing this file.'
+        ])
+
+    return html.Div([
+        html.H5(filename),
+        html.H6(datetime.datetime.fromtimestamp(date)),
+
+        dash_table.DataTable(
+            df.to_dict('records'),
+            [{'name': i, 'id': i} for i in df.columns]
+        ),
+
+        html.Hr(),  # horizontal line
+
+        # For debugging, display the raw contents provided by the web browser
+        html.Div('Raw Content'),
+        html.Pre(contents[0:200] + '...', style={
+            'whiteSpace': 'pre-wrap',
+            'wordBreak': 'break-all'
+        })
+    ])
 
 
+@app.callback(dash.dependencies.Output('output-data-upload', 'children'),
+              dash.dependencies.Input('upload-data', 'contents'),
+              State('upload-data', 'filename'),
+              State('upload-data', 'last_modified'))
+def update_output(list_of_contents, list_of_names, list_of_dates):
+    # if list_of_contents is not None:
+    #     children = [
+    #         parse_contents(c, n, d) for c, n, d in
+    #         zip(list_of_contents, list_of_names, list_of_dates)]
+    # df = pd.read_csv(list_of_names)
+    return list_of_contents
 
 if __name__ == '__main__':
     app.run_server(debug=True)
